@@ -1,0 +1,22 @@
+{
+  "manifest_version": 1.0,
+  "id": "availability_report",
+  "name": "Availability report",
+  "version": "1.0.0",
+  "namespace": "BGmotAR",
+  "author": "Evgeny Yurchenko",
+  "url": "https://bgmot.com",
+  "description": "Availability report improvementes",
+  "actions": {
+    "availreport.view": {
+      "class": "CControllerBGAvailReportView",
+      "view": "module.reports.availreport.view",
+      "layout": "layout.htmlpage"
+    },
+    "availreport.view.refresh": {
+      "class": "CControllerBGAvailReportViewRefresh",
+      "view": "module.reports.availreport.view.refresh",
+      "layout": "layout.json"
+    }
+  }
+}
