@@ -48,11 +48,14 @@ abstract class CControllerBGAvailReport extends CController {
 	protected function getData(array $filter): array {
 		$limit = CSettingsHelper::get(CSettingsHelper::SEARCH_LIMIT) + 1;
 
+		$host_group_ids = sizeof($filter['hostgroupids']) > 0 ? $this->getChildGroups($filter['hostgroupids']) : null;
+
 		$triggers = API::Trigger()->get([
 			'output' => ['triggerid', 'description', 'expression', 'value'],
 			'selectHosts' => ['name'],
 			'expandDescription' => true,
 			'monitored' => true,
+			'groupids' => $host_group_ids,
 			'filter' => [
 				'templateid' => sizeof($filter['tpl_triggerids']) > 0 ? $filter['tpl_triggerids'] : null
 			],
@@ -113,5 +116,31 @@ abstract class CControllerBGAvailReport extends CController {
 		}
 
 		return $data;
+	}
+
+	protected function getChildGroups($parent_group_ids): array {
+		$all_group_ids = [];
+		foreach($parent_group_ids as $parent_group_id) {
+			$groups = API::HostGroup()->get([
+				'output' => ['groupid', 'name'],
+				'groupids' => [$parent_group_id]
+			]);
+			$parent_group_name = $groups[0]['name'].'/';
+			$len = strlen($parent_group_name);
+
+			$groups = API::HostGroup()->get([
+				'output' => ['groupid', 'name'],
+				'search' => ['name' => $parent_group_name],
+				'startSearch' => true
+			]);
+
+			$all_group_ids[] = $parent_group_id;
+			foreach ($groups as $group) {
+				if (substr($group['name'], 0, $len) === $parent_group_name) {
+					$all_group_ids[] = $group['groupid'];
+				}
+			}
+		}
+		return $all_group_ids;
 	}
 }
