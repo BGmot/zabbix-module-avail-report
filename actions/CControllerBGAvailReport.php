@@ -72,8 +72,11 @@ abstract class CControllerBGAvailReport extends CController {
 
 		$view_curl = (new CUrl())->setArgument('action', 'availreport.view');
 
-		// Split result array and create paging.
-		$paging = CPagerHelper::paginate($filter['page'], $triggers, 'ASC', $view_curl);
+		if (!array_key_exists('action_from_url', $filter) ||
+			$filter['action_from_url'] != 'availreport.view.csv') {
+			// Split result array and create paging. Only if not generating CSV.
+			$paging = CPagerHelper::paginate($filter['page'], $triggers, 'ASC', $view_curl);
+		}
 
 		// Get timestamps from and to
 		if ($filter['from'] != '' && $filter['to'] != '') {

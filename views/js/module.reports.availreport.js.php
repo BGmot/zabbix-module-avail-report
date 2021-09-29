@@ -75,6 +75,16 @@
 				$('.wrapper .msg-bad').remove();
 			},
 			refresh: function() {
+				// Update export_csv url according to what's in filter fields
+				const export_csv_url = new URL(this.refresh_url, 'http://example.com');
+				for(var key of export_csv_url.searchParams.keys()) {
+					if (key == 'action') {
+						export_csv_url.searchParams.set(key, 'availreport.view.csv');
+					}
+				}
+				var csv_url=export_csv_url.pathname + '?' + export_csv_url.searchParams.toString();
+				$('#export_csv').data('url', csv_url)
+
 				this.setLoading();
 
 				this.deferred = $.getJSON(this.refresh_url);
@@ -178,5 +188,4 @@
 			window.availreport_page.refresh();
 		}
 	});
-
 </script>

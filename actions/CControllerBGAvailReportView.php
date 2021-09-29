@@ -60,6 +60,7 @@ class CControllerBGAvailReportView extends CControllerBGAvailReport {
 		$filter = $filter_tabs[$profile->selected];
 		$refresh_curl = (new CUrl('zabbix.php'));
 		$filter['action'] = 'availreport.view.refresh';
+		$filter['action_from_url'] = $this->getAction();
 		array_map([$refresh_curl, 'setArgument'], array_keys($filter), $filter);
 
 		$data = [
@@ -89,9 +90,9 @@ class CControllerBGAvailReportView extends CControllerBGAvailReport {
 		$response = new CControllerResponseData($data);
 		$response->setTitle(_('Availability report'));
 
-		/*+++if ($data['action'] === 'reports.availreport.csv') {
+		if ($data['action'] === 'availreport.view.csv') {
 			$response->setFileName('zbx_availability_report_export.csv');
-		}*/
+		}
 
 		$this->setResponse($response);
 	}

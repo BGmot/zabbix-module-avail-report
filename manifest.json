@@ -17,6 +17,11 @@
       "class": "CControllerBGAvailReportViewRefresh",
       "view": "module.reports.availreport.view.refresh",
       "layout": "layout.json"
+    },
+    "availreport.view.csv": {
+      "class": "CControllerBGAvailReportView",
+      "view": "module.reports.availreport.view",
+      "layout": "layout.csv"
     }
   }
 }
