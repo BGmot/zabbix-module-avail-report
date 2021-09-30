@@ -79,7 +79,13 @@ $filter_column = (new CFormList())
 		]))
 			->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH)
 			->setId('hostgroupids_#{uniqid}')
-	);
+	)
+	->addRow(_('Show only hosts with problems'),
+		(new CCheckBox('only_with_problems'))
+			->setChecked($data['only_with_problems'] == 1)
+			->setUncheckedValue(0)
+			->setId('only_with_problems_#{uniqid}')
+		);
 
 $template = (new CDiv())
 	->addClass(ZBX_STYLE_TABLE)

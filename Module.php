@@ -10,7 +10,7 @@ class Module extends \Core\CModule {
 		APP::Component()->get('menu.main')
 			->findOrAdd(_('Reports'))
 				->getSubmenu()
-					->insertAfter('Availability report', (new \CMenuItem(_('Availability Report BG')))
+					->insertAfter('Availability report', (new \CMenuItem(_('Availability report BG')))
 						->setAction('availreport.view')
 					);
 	}

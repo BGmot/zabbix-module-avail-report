@@ -23,6 +23,7 @@ abstract class CControllerBGAvailReport extends CController {
 		'templateids' => [],
 		'tpl_triggerids' => [], 
 		'hostgroupids' => [],
+		'only_with_problems' => 0,
                 'page' => null,
 		'from' => '',
 		'to' => ''
@@ -92,6 +93,20 @@ abstract class CControllerBGAvailReport extends CController {
 
 		foreach ($triggers as &$trigger) {
 			$trigger['availability'] = calculateAvailability($trigger['triggerid'], $filter['from_ts'], $filter['to_ts']);
+		}
+		if ($filter['only_with_problems']) {
+			$triggers_with_problems = [];
+			foreach ($triggers as $trigger) {
+				if ($trigger['availability']['true'] > 0.00005) {
+					// There was downtime
+					$triggers_with_problems[] = $trigger;
+				}
+			}
+			$paging = CPagerHelper::paginate($filter['page'], $triggers_with_problems, 'ASC', $view_curl);
+			return [
+				'paging' => $paging,
+				'triggers' => $triggers_with_problems
+			];
 		}
 
 		return [

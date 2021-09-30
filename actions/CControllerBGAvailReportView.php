@@ -24,6 +24,7 @@ class CControllerBGAvailReportView extends CControllerBGAvailReport {
 			'tpl_triggerids' =>		'array_id',
 			'hostgroupids' =>		'array_id',
 			'filter_reset' =>		'in 1',
+			'only_with_problems' =>		'in 0,1',
 			'page' =>			'ge 1',
 			'counter_index' =>		'ge 0',
 			'from' =>			'range_time',
@@ -56,6 +57,7 @@ class CControllerBGAvailReportView extends CControllerBGAvailReport {
 
 			$filter_tabs[] = $filter_tab + ['filter_view_data' => $this->getAdditionalData($filter_tab)];
 		}
+
 		// filter
 		$filter = $filter_tabs[$profile->selected];
 		$refresh_curl = (new CUrl('zabbix.php'));
