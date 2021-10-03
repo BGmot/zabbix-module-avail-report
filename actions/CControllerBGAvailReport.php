@@ -23,7 +23,7 @@ abstract class CControllerBGAvailReport extends CController {
 		'templateids' => [],
 		'tpl_triggerids' => [], 
 		'hostgroupids' => [],
-		'only_with_problems' => 0,
+		'only_with_problems' => 1,
                 'page' => null,
 		'from' => '',
 		'to' => ''
@@ -47,10 +47,9 @@ abstract class CControllerBGAvailReport extends CController {
 	}
 
 	protected function getData(array $filter): array {
-		$limit = CSettingsHelper::get(CSettingsHelper::SEARCH_LIMIT) + 1;
-
 		$host_group_ids = sizeof($filter['hostgroupids']) > 0 ? $this->getChildGroups($filter['hostgroupids']) : null;
 
+		// All CONFIGURED triggers that fall under selected filter
 		$triggers = API::Trigger()->get([
 			'output' => ['triggerid', 'description', 'expression', 'value'],
 			'selectHosts' => ['name'],
@@ -60,24 +59,10 @@ abstract class CControllerBGAvailReport extends CController {
 			'filter' => [
 				'templateid' => sizeof($filter['tpl_triggerids']) > 0 ? $filter['tpl_triggerids'] : null
 			],
-                        'limit' => $limit
+			// Default 1000 records limit might be low for deployments with thousands of hosts
+			// Use this inreased limit because we need to have all the triggers in CSV report
+                        'limit' => 5001
 		]);
-
-		// Now just prepare needed data.
-		foreach ($triggers as &$trigger) {
-			$trigger['host_name'] = $trigger['hosts'][0]['name'];
-		}
-		unset($trigger);
-
-		CArrayHelper::sort($triggers, ['host_name', 'description'], 'ASC');
-
-		$view_curl = (new CUrl())->setArgument('action', 'availreport.view');
-
-		if (!array_key_exists('action_from_url', $filter) ||
-			$filter['action_from_url'] != 'availreport.view.csv') {
-			// Split result array and create paging. Only if not generating CSV.
-			$paging = CPagerHelper::paginate($filter['page'], $triggers, 'ASC', $view_curl);
-		}
 
 		// Get timestamps from and to
 		if ($filter['from'] != '' && $filter['to'] != '') {
@@ -91,24 +76,74 @@ abstract class CControllerBGAvailReport extends CController {
 			$filter['to_ts'] = null;
 		}
 
-		foreach ($triggers as &$trigger) {
-			$trigger['availability'] = calculateAvailability($trigger['triggerid'], $filter['from_ts'], $filter['to_ts']);
-		}
 		if ($filter['only_with_problems']) {
+			// Find all triggers that went into PROBLEM state
+			// at any time in given time frame
+			$triggerids_with_problems = [];
+			$sql = 'SELECT e.objectid' .
+				' FROM events e'.
+				' WHERE e.source='.EVENT_SOURCE_TRIGGERS.
+					' AND e.object='.EVENT_OBJECT_TRIGGER.
+					' AND e.value='.TRIGGER_VALUE_TRUE;
+			if ($filter['from_ts']) {
+				$sql .= ' AND e.clock>='.zbx_dbstr($filter['from_ts']);
+			}
+			if ($filter['to_ts']) {
+				$sql .= ' AND e.clock<='.zbx_dbstr($filter['to_ts']);
+			}
+			$dbEvents = DBselect($sql);
+			while ($row = DBfetch($dbEvents)) {
+				$triggerids_with_problems[] = $row['objectid'];
+			}
+
+			// Find all triggers that were in the PROBLEM state
+			// at the start of this time frame
+			foreach($triggers as $trigger) {
+				$sql = 'SELECT e.objectid, e.value'.
+						' FROM events e'.
+						' WHERE e.objectid='.zbx_dbstr($trigger['triggerid']).
+							' AND e.source='.EVENT_SOURCE_TRIGGERS.
+							' AND e.object='.EVENT_OBJECT_TRIGGER.
+							' AND e.clock<'.zbx_dbstr($filter['from_ts']).
+						' ORDER BY e.eventid DESC';
+				if ($row = DBfetch(DBselect($sql, 1))) {
+					// Add the triggerid to the array if it is not there
+					if ($row['value'] == TRIGGER_VALUE_TRUE &&
+						!in_array($row['objectid'], $triggerids_with_problems)) {
+						$triggerids_with_problems[] = $row['objectid'];
+					}
+				}
+			}
 			$triggers_with_problems = [];
 			foreach ($triggers as $trigger) {
-				if ($trigger['availability']['true'] > 0.00005) {
-					// There was downtime
+				if (in_array($trigger['triggerid'], $triggerids_with_problems)) {
 					$triggers_with_problems[] = $trigger;
 				}
 			}
-			$paging = CPagerHelper::paginate($filter['page'], $triggers_with_problems, 'ASC', $view_curl);
-			return [
-				'paging' => $paging,
-				'triggers' => $triggers_with_problems
-			];
+                        // Reset all previously selected triggers to only ones with problems
+			$triggers = $triggers_with_problems;
 		}
 
+		// Now just prepare needed data.
+		foreach ($triggers as &$trigger) {
+			$trigger['host_name'] = $trigger['hosts'][0]['name'];
+		}
+		unset($trigger);
+
+		CArrayHelper::sort($triggers, ['host_name', 'description'], 'ASC');
+
+		$view_curl = (new CUrl())->setArgument('action', 'availreport.view');
+
+		if (!array_key_exists('action_from_url', $filter) ||
+			$filter['action_from_url'] != 'availreport.view.csv') {
+			// Not exporting data to CSV, just showing the data
+			// Split result array and create paging. Only if not generating CSV.
+			$paging = CPagerHelper::paginate($filter['page'], $triggers, 'ASC', $view_curl);
+		}
+
+		foreach ($triggers as &$trigger) {
+			$trigger['availability'] = calculateAvailability($trigger['triggerid'], $filter['from_ts'], $filter['to_ts']);
+		}
 		return [
 			'paging' => $paging,
 			'triggers' => $triggers
