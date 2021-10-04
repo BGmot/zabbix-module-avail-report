@@ -160,12 +160,46 @@ abstract class CControllerBGAvailReport extends CController {
 	protected function getAdditionalData($filter): array {
 		$data = [];
 
-		if ($filter['hostgroupids']) {
+		if ($filter['tpl_groupids']) {
 			$groups = API::HostGroup()->get([
+				'output' => ['groupid', 'name'],
+				'groupids' => $filter['tpl_groupids']
+			]);
+			$data['tpl_groups_multiselect'] = CArrayHelper::renameObjectsKeys(array_values($groups), ['groupid' => 'id']);
+		}
+
+		if ($filter['templateids']) {
+			$templates= API::Template()->get([
+				'output' => ['templateid', 'name'],
+				'templateids' => $filter['templateids']
+			]);
+			$data['templates_multiselect'] = CArrayHelper::renameObjectsKeys(array_values($templates), ['templateid' => 'id']);
+		}
+
+		if ($filter['tpl_triggerids']) {
+			$triggers = API::Trigger()->get([
+				'output' => ['triggerid', 'description'],
+				'selectHosts' => 'extend',
+				'triggerids' => $filter['tpl_triggerids']
+			]);
+
+			foreach($triggers as &$trigger) {
+				sizeof($trigger['hosts']) > 0 ?
+					$trigger['name'] = $trigger['hosts'][0]['host'] . ': ' . $trigger['description'] :
+					$trigger['name'] = $trigger['description'];
+				unset($trigger['hosts']);
+				unset($trigger['description']);
+			}
+
+			$data['tpl_triggers_multiselect'] = CArrayHelper::renameObjectsKeys(array_values($triggers), ['triggerid' => 'id']);
+		}
+
+		if ($filter['hostgroupids']) {
+			$hostgroups = API::HostGroup()->get([
 				'output' => ['groupid', 'name'],
 				'groupids' => $filter['hostgroupids']
 			]);
-			$data['hostgroups_multiselect'] = CArrayHelper::renameObjectsKeys(array_values($groups), ['groupid' => 'id']);
+			$data['hostgroups_multiselect'] = CArrayHelper::renameObjectsKeys(array_values($hostgroups), ['groupid' => 'id']);
 		}
 
 		return $data;

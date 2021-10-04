@@ -219,6 +219,11 @@ if (array_key_exists('render_html', $data)) {
 			}
 		});
 
+		let only_with_problems_checkbox = $('[name="only_with_problems"]');
+		if (only_with_problems_checkbox.attr('unchecked-value') === data['only_with_problems']) {
+			only_with_problems_checkbox.removeAttr('checked');
+		}
+
 		// Initialize src_url.
 		this.resetUnsavedState();
 		this.on(TABFILTERITEM_EVENT_ACTION, update.bind(this));

@@ -22,6 +22,11 @@
       "class": "CControllerBGAvailReportView",
       "view": "module.reports.availreport.view",
       "layout": "layout.csv"
+    },
+    "tabfilter.profile.update": {
+      "class": "CControllerBGTabFilterProfileUpdate",
+      "view": null,
+      "layout": "layout.json"
     }
   }
 }
