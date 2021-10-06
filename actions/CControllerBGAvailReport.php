@@ -125,8 +125,10 @@ abstract class CControllerBGAvailReport extends CController {
 		}
 
 		// Now just prepare needed data.
+		$hosts = []; // Array of hosts {hostname => hostid}
 		foreach ($triggers as &$trigger) {
 			$trigger['host_name'] = $trigger['hosts'][0]['name'];
+			$hosts[$trigger['hosts'][0]['hostid']] = $trigger['hosts'][0]['name'];
 		}
 		unset($trigger);
 
@@ -144,9 +146,19 @@ abstract class CControllerBGAvailReport extends CController {
 		foreach ($triggers as &$trigger) {
 			$trigger['availability'] = calculateAvailability($trigger['triggerid'], $filter['from_ts'], $filter['to_ts']);
 		}
+
+		// Get tags for all involved hosts
+		$hosts = API::Host()->get([
+			'output' => ['hostid', 'name'],
+			'selectTags' => ['tag', 'value'],
+			'hostids' => array_keys($hosts),
+			'preservekeys' => true
+		]);
+
 		return [
 			'paging' => $paging,
-			'triggers' => $triggers
+			'triggers' => $triggers,
+			'hosts' => $hosts
 		];
 	}
 

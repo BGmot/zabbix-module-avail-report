@@ -50,7 +50,26 @@ if ($data['action'] == 'availreport.view') {
 		->show();
 } else {
 	// $data['action'] = 'availreport.view.csv'
+	if (sizeof($data['triggers']) == 0) {
+		// Nothing to export
+		print zbx_toCSV([]);
+		return;
+	}
+
 	$csv = [];
+	$hosts = $data['hosts'];
+
+        // Find out all the tags present in the report
+	$tag_names = [];
+	foreach ($hosts as &$host) {
+		$host['tags_kv'] = [];
+		foreach ($host['tags'] as $tag) {
+			if (!array_key_exists($tag['tag'], $tag_names)) {
+				$tag_names[] = $tag['tag'];
+			}
+			$host['tags_kv'][ $tag['tag']] = $tag['value'];
+		}
+	}
 
 	$csv[] = array_filter([
                         _('Host'),
@@ -58,8 +77,12 @@ if ($data['action'] == 'availreport.view') {
                         _('Problems'),
                         _('Ok')
                 ]);
+	foreach ($tag_names as $tag_name) {
+		$csv[0][] = $tag_name;
+	}
 	foreach ($data['triggers'] as $trigger) {
-		$csv[] = [
+		// Add data
+		$line_to_add = [
 			$trigger['host_name'],
 			$trigger['description'],
 			($trigger['availability']['true'] < 0.00005)
@@ -69,6 +92,16 @@ if ($data['action'] == 'availreport.view') {
 				? ''
 				: sprintf('%.4f%%', $trigger['availability']['false'])
 		];
+
+		// Add tags
+		foreach ($tag_names as $tag_name) {
+			if (array_key_exists($tag_name, $hosts[$trigger['hosts'][0]['hostid']]['tags_kv'])) {
+				$line_to_add[] = $hosts[$trigger['hosts'][0]['hostid']]['tags_kv'][$tag_name];
+			} else {
+				$line_to_add[] = '';
+			}
+		}
+		$csv[] = $line_to_add;
 	}
 
 	print zbx_toCSV($csv);

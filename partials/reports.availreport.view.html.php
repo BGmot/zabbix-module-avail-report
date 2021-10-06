@@ -10,11 +10,20 @@ $table->setHeader([
 	(new CColHeader(_('Host'))),
 	(new CColHeader(_('Name'))),
 	(new CColHeader(_('Problems'))),
-	(new CColHeader(_('Ok')))
+	(new CColHeader(_('Ok'))),
+	(new CColHeader(_('Tags')))
 ]);
 
 $allowed_ui_problems = CWebUser::checkAccess(CRoleHelper::UI_MONITORING_PROBLEMS);
 $triggers = $data['triggers'];
+$hosts = $data['hosts'];
+
+$tags = makeTags($hosts, true, 'hostid', ZBX_TAG_COUNT_DEFAULT);
+foreach ($hosts as &$host) {
+	$host['tags'] = $tags[$host['hostid']];
+}
+unset($host);
+
 foreach ($triggers as $trigger) {
 	$table->addRow([
 		$trigger['host_name'],
@@ -31,7 +40,8 @@ foreach ($triggers as $trigger) {
 			: (new CSpan(sprintf('%.4f%%', $trigger['availability']['true'])))->addClass(ZBX_STYLE_RED),
 		($trigger['availability']['false'] < 0.00005)
 			? ''
-			: (new CSpan(sprintf('%.4f%%', $trigger['availability']['false'])))->addClass(ZBX_STYLE_GREEN)
+			: (new CSpan(sprintf('%.4f%%', $trigger['availability']['false'])))->addClass(ZBX_STYLE_GREEN),
+		$hosts[$trigger['hosts'][0]['hostid']]['tags']
 	]);
 }
 
