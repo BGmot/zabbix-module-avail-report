@@ -64,10 +64,10 @@ if ($data['action'] == 'availreport.view') {
 	foreach ($hosts as &$host) {
 		$host['tags_kv'] = [];
 		foreach ($host['tags'] as $tag) {
-			if (!array_key_exists($tag['tag'], $tag_names)) {
+			if (!in_array($tag['tag'], $tag_names)) {
 				$tag_names[] = $tag['tag'];
 			}
-			$host['tags_kv'][ $tag['tag']] = $tag['value'];
+			$host['tags_kv'][$tag['tag']] = $tag['value'];
 		}
 	}
 

@@ -49,6 +49,13 @@ abstract class CControllerBGAvailReport extends CController {
 	protected function getData(array $filter): array {
 		$host_group_ids = sizeof($filter['hostgroupids']) > 0 ? $this->getChildGroups($filter['hostgroupids']) : null;
 
+		if (!array_key_exists('action_from_url', $filter) ||
+			$filter['action_from_url'] != 'availreport.view.csv') {
+			$limit = 5001;
+		} else {
+			$limit = CSettingsHelper::get(CSettingsHelper::SEARCH_LIMIT) + 1;
+		}
+
 		// All CONFIGURED triggers that fall under selected filter
 		$triggers = API::Trigger()->get([
 			'output' => ['triggerid', 'description', 'expression', 'value'],
@@ -59,9 +66,7 @@ abstract class CControllerBGAvailReport extends CController {
 			'filter' => [
 				'templateid' => sizeof($filter['tpl_triggerids']) > 0 ? $filter['tpl_triggerids'] : null
 			],
-			// Default 1000 records limit might be low for deployments with thousands of hosts
-			// Use this inreased limit because we need to have all the triggers in CSV report
-                        'limit' => 5001
+                        'limit' => $limit
 		]);
 
 		// Get timestamps from and to
@@ -125,13 +130,6 @@ abstract class CControllerBGAvailReport extends CController {
 		}
 
 		// Now just prepare needed data.
-		$hosts = []; // Array of hosts {hostname => hostid}
-		foreach ($triggers as &$trigger) {
-			$trigger['host_name'] = $trigger['hosts'][0]['name'];
-			$hosts[$trigger['hosts'][0]['hostid']] = $trigger['hosts'][0]['name'];
-		}
-		unset($trigger);
-
 		CArrayHelper::sort($triggers, ['host_name', 'description'], 'ASC');
 
 		$view_curl = (new CUrl())->setArgument('action', 'availreport.view');
@@ -146,6 +144,26 @@ abstract class CControllerBGAvailReport extends CController {
 		foreach ($triggers as &$trigger) {
 			$trigger['availability'] = calculateAvailability($trigger['triggerid'], $filter['from_ts'], $filter['to_ts']);
 		}
+
+		// Remove triggers that are auto-resolved due to event correlation
+		$triggers_idx_to_remove = [];
+		if ($filter['only_with_problems']) {
+			for ($i = 0; $i < sizeof($triggers); $i++) {
+				if ($trigger['availability']['true'] < 0.00005) {
+					$triggers_idx_to_remove[] = $i;
+				}
+			}
+			foreach($triggers_idx_to_remove as $index) {
+				unset($triggers[$index]);
+			}
+		}
+
+		$hosts = []; // Array of hosts {hostname => hostid}
+		foreach ($triggers as &$trigger) {
+			$trigger['host_name'] = $trigger['hosts'][0]['name'];
+			$hosts[$trigger['hosts'][0]['hostid']] = $trigger['hosts'][0]['name'];
+		}
+		unset($trigger);
 
 		// Get tags for all involved hosts
 		$hosts = API::Host()->get([
