@@ -9,6 +9,7 @@ use CArrayHelper;
 use CUrl;
 use CPagerHelper;
 use CRangeTimeParser;
+use CWebUser;
 
 abstract class CControllerBGAvailReport extends CController {
 
@@ -49,10 +50,12 @@ abstract class CControllerBGAvailReport extends CController {
 	protected function getData(array $filter): array {
 		$host_group_ids = sizeof($filter['hostgroupids']) > 0 ? $this->getChildGroups($filter['hostgroupids']) : null;
 
+		$generating_csv_flag = 1;
 		if (!array_key_exists('action_from_url', $filter) ||
 			$filter['action_from_url'] != 'availreport.view.csv') {
 			// Generating for UI
 			$limit = CSettingsHelper::get(CSettingsHelper::SEARCH_LIMIT) + 1;
+			$generating_csv_flag = 0;
 		} else {
 			// Generating for CSV report
 			$limit = 5001;
@@ -102,7 +105,6 @@ abstract class CControllerBGAvailReport extends CController {
 			while ($row = DBfetch($dbEvents)) {
 				$triggerids_with_problems[] = $row['objectid'];
 			}
-
 			// Find all triggers that were in the PROBLEM state
 			// at the start of this time frame
 			foreach($triggers as $trigger) {
@@ -121,13 +123,14 @@ abstract class CControllerBGAvailReport extends CController {
 					}
 				}
 			}
-			$triggers_with_problems = [];
 			foreach ($triggers as $trigger) {
 				if (in_array($trigger['triggerid'], $triggerids_with_problems)) {
 					$triggers_with_problems[] = $trigger;
 				}
 			}
+
                         // Reset all previously selected triggers to only ones with problems
+                        unset($triggers);
 			$triggers = $triggers_with_problems;
 		}
 
@@ -136,32 +139,32 @@ abstract class CControllerBGAvailReport extends CController {
 
 		$view_curl = (new CUrl())->setArgument('action', 'availreport.view');
 
-		if (!array_key_exists('action_from_url', $filter) ||
-			$filter['action_from_url'] != 'availreport.view.csv') {
+		$rows_per_page = (int) CWebUser::$data['rows_per_page'];
+                $selected_triggers = [];
+		$i = 1;  // Counter. We need to stop doing expensive calculateAvailability() when results are not visible
+		foreach ($triggers as &$trigger) {
+			$i++;
+			$trigger['availability'] = calculateAvailability($trigger['triggerid'], $filter['from_ts'], $filter['to_ts']);
+			if ($filter['only_with_problems']) {
+				if ($trigger['availability']['true'] > 0.00005) {
+					$selected_triggers[] = $trigger;
+				}
+			} else {
+				$selected_triggers[] = $trigger;
+			}
+			if (!$generating_csv_flag && $i > $rows_per_page) {
+				break; // Enough for one page
+			}
+		}
+
+		if (!$generating_csv_flag) {
 			// Not exporting data to CSV, just showing the data
 			// Split result array and create paging. Only if not generating CSV.
-			$paging = CPagerHelper::paginate($filter['page'], $triggers, 'ASC', $view_curl);
-		}
-
-		foreach ($triggers as &$trigger) {
-			$trigger['availability'] = calculateAvailability($trigger['triggerid'], $filter['from_ts'], $filter['to_ts']);
-		}
-
-		// Remove triggers that are auto-resolved due to event correlation
-		$triggers_idx_to_remove = [];
-		if ($filter['only_with_problems']) {
-			for ($i = 0; $i < sizeof($triggers); $i++) {
-				if ($trigger['availability']['true'] < 0.00005) {
-					$triggers_idx_to_remove[] = $i;
-				}
-			}
-			foreach($triggers_idx_to_remove as $index) {
-				unset($triggers[$index]);
-			}
+			$paging = CPagerHelper::paginate($filter['page'], $selected_triggers, 'ASC', $view_curl);
 		}
 
 		$hosts = []; // Array of hosts {hostname => hostid}
-		foreach ($triggers as &$trigger) {
+		foreach ($selected_triggers as &$trigger) {
 			$trigger['host_name'] = $trigger['hosts'][0]['name'];
 			$hosts[$trigger['hosts'][0]['hostid']] = $trigger['hosts'][0]['name'];
 		}
@@ -177,7 +180,7 @@ abstract class CControllerBGAvailReport extends CController {
 
 		return [
 			'paging' => $paging,
-			'triggers' => $triggers,
+			'triggers' => $selected_triggers,
 			'hosts' => $hosts
 		];
 	}
