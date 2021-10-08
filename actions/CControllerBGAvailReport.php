@@ -51,9 +51,11 @@ abstract class CControllerBGAvailReport extends CController {
 
 		if (!array_key_exists('action_from_url', $filter) ||
 			$filter['action_from_url'] != 'availreport.view.csv') {
-			$limit = 5001;
-		} else {
+			// Generating for UI
 			$limit = CSettingsHelper::get(CSettingsHelper::SEARCH_LIMIT) + 1;
+		} else {
+			// Generating for CSV report
+			$limit = 5001;
 		}
 
 		// All CONFIGURED triggers that fall under selected filter
