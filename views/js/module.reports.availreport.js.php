@@ -82,7 +82,7 @@
 						export_csv_url.searchParams.set(key, 'availreport.view.csv');
 					}
 				}
-				var csv_url=export_csv_url.pathname + '?' + export_csv_url.searchParams.toString();
+				var csv_url=export_csv_url.pathname.slice(1) + '?' + export_csv_url.searchParams.toString();
 				$('#export_csv').data('url', csv_url)
 
 				this.setLoading();
@@ -184,7 +184,8 @@
 					url.searchParams.set(key, data[key]);
 				}
 			}
-			window.availreport_page.refresh_url=url.pathname + '?' + url.searchParams.toString();
+
+			window.availreport_page.refresh_url=url.pathname.slice(1) + '?' + url.searchParams.toString();
 			window.availreport_page.refresh();
 		}
 	});
