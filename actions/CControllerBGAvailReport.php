@@ -62,6 +62,20 @@ abstract class CControllerBGAvailReport extends CController {
 		}
 
 		// All CONFIGURED triggers that fall under selected filter
+		$num_of_triggers = API::Trigger()->get([
+			'output' => ['triggerid', 'description', 'expression', 'value'],
+			'monitored' => true,
+			'groupids' => $host_group_ids,
+			'filter' => [
+				'templateid' => sizeof($filter['tpl_triggerids']) > 0 ? $filter['tpl_triggerids'] : null
+			],
+			'countOutput' => true
+		]);
+		$warning = null;
+		if ($num_of_triggers > $limit) {
+			$warning = 'WARNING: ' . $num_of_triggers . ' triggers found which is more than reasonable limit ' . $limit . ', results below might be not totally accurate. Please add or review current filter conditions.';
+		}
+
 		$triggers = API::Trigger()->get([
 			'output' => ['triggerid', 'description', 'expression', 'value'],
 			'selectHosts' => ['name'],
@@ -181,6 +195,7 @@ abstract class CControllerBGAvailReport extends CController {
 		return [
 			'paging' => $paging,
 			'triggers' => $selected_triggers,
+			'warning' => $warning,
 			'hosts' => $hosts
 		];
 	}
