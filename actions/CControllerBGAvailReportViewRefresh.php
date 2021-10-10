@@ -11,40 +11,21 @@ class CControllerBGAvailReportViewRefresh extends CControllerBGAvailReportView {
 	protected function doAction(): void {
 		$filter = static::FILTER_FIELDS_DEFAULT;
 
-		if ($this->getInput('filter_counters', 0)) {
-			$profile = (new CTabFilterProfile(static::FILTER_IDX, static::FILTER_FIELDS_DEFAULT))->read();
-			$filters = $this->hasInput('counter_index')
-				? [$profile->getTabFilter($this->getInput('counter_index'))]
-				: $profile->getTabsWithDefaults();
-			$filter_counters = [];
+		$this->getInputs($filter, array_keys($filter));
+		$filter = $this->cleanInput($filter);
+		$prepared_data = $this->getData($filter);
 
-			foreach ($filters as $index => $tabfilter) {
-				$filter_counters[$index] = $tabfilter['filter_show_counter'] ? $this->getCount($tabfilter) : 0;
-			}
+		$view_url = (new CUrl())
+			->setArgument('action', 'availreport.view')
+			->removeArgument('page');
 
-			$this->setResponse(
-				(new CControllerResponseData([
-					'main_block' => json_encode(['filter_counters' => $filter_counters])
-				]))->disableView()
-			);
-		}
-		else {
-			$this->getInputs($filter, array_keys($filter));
-			$filter = $this->cleanInput($filter);
-			$prepared_data = $this->getData($filter);
+		$data = [
+			'filter' => $filter,
+			'view_curl' => $view_url
+		] + $prepared_data;
 
-			$view_url = (new CUrl())
-				->setArgument('action', 'availreport.view')
-				->removeArgument('page');
-
-			$data = [
-				'filter' => $filter,
-				'view_curl' => $view_url
-			] + $prepared_data;
-
-			$response = new CControllerResponseData($data);
-			$this->setResponse($response);
-		}
+		$response = new CControllerResponseData($data);
+		$this->setResponse($response);
 	}
 }
 ?>
