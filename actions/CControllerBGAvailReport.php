@@ -24,28 +24,12 @@ abstract class CControllerBGAvailReport extends CController {
 		'templateids' => [],
 		'tpl_triggerids' => [], 
 		'hostgroupids' => [],
+		'hostids' => [],
 		'only_with_problems' => 1,
                 'page' => null,
 		'from' => '',
 		'to' => ''
 	];
-
-	protected function getCount(array $filter): int {
-		$groupids = $filter['hostgroupids'] ? getSubGroups($filter['hostgroupids']) : null;
-
-		return (int) API::Host()->get([
-			'countOutput' => true,
-			'groupids' => $groupids,
-			'monitored_hosts' => true,
-			'groupids' => $filter['hostgroupids'],
-			'templateids' => $filter['templateids'],
-			'triggerids' => $filter['tpl_triggerids'],
-			'filter' => [
-				'status' => 1
-			],
-			'limit' => CSettingsHelper::get(CSettingsHelper::SEARCH_LIMIT) + 1
-		]);
-	}
 
 	protected function getData(array $filter): array {
 		$host_group_ids = sizeof($filter['hostgroupids']) > 0 ? $this->getChildGroups($filter['hostgroupids']) : null;
@@ -66,6 +50,7 @@ abstract class CControllerBGAvailReport extends CController {
 			'output' => ['triggerid', 'description', 'expression', 'value'],
 			'monitored' => true,
 			'groupids' => $host_group_ids,
+			'hostids ' => sizeof($filter['hostids']) > 0 ? $filter['hostids'] : null,
 			'filter' => [
 				'templateid' => sizeof($filter['tpl_triggerids']) > 0 ? $filter['tpl_triggerids'] : null
 			],
@@ -82,11 +67,12 @@ abstract class CControllerBGAvailReport extends CController {
 			'expandDescription' => true,
 			'monitored' => true,
 			'groupids' => $host_group_ids,
+			'hostids' => sizeof($filter['hostids']) > 0 ? $filter['hostids'] : null,
 			'filter' => [
 				'templateid' => sizeof($filter['tpl_triggerids']) > 0 ? $filter['tpl_triggerids'] : null
 			],
                         'limit' => $limit
-		]);
+                ]);
 
 		// Get timestamps from and to
 		if ($filter['from'] != '' && $filter['to'] != '') {
@@ -250,6 +236,14 @@ abstract class CControllerBGAvailReport extends CController {
 				'groupids' => $filter['hostgroupids']
 			]);
 			$data['hostgroups_multiselect'] = CArrayHelper::renameObjectsKeys(array_values($hostgroups), ['groupid' => 'id']);
+		}
+
+		if ($filter['hostids']) {
+			$hosts = API::Host()->get([
+				'output' => ['hostid', 'name'],
+				'hostids' => $filter['hostids']
+			]);
+			$data['hosts_multiselect'] = CArrayHelper::renameObjectsKeys(array_values($hosts), ['hostid' => 'id']);
 		}
 
 		return $data;
