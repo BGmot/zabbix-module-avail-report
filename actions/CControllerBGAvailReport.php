@@ -141,20 +141,25 @@ abstract class CControllerBGAvailReport extends CController {
 
 		$rows_per_page = (int) CWebUser::$data['rows_per_page'];
                 $selected_triggers = [];
-		$i = 1;  // Counter. We need to stop doing expensive calculateAvailability() when results are not visible
+		$i = 0;  // Counter. We need to stop doing expensive calculateAvailability() when results are not visible
+		$page = $filter['page'] ? $filter['page'] - 1 : 0;
+		$start_idx = $page * $rows_per_page;
+		$end_idx = $start_idx + $rows_per_page;
 		foreach ($triggers as &$trigger) {
-			$i++;
-			$trigger['availability'] = calculateAvailability($trigger['triggerid'], $filter['from_ts'], $filter['to_ts']);
-			if ($filter['only_with_problems']) {
-				if ($trigger['availability']['true'] > 0.00005) {
+			if ($generating_csv_flag ||
+				 ($i >= $start_idx && $i < $end_idx) ) {
+				$trigger['availability'] = calculateAvailability($trigger['triggerid'], $filter['from_ts'], $filter['to_ts']);
+				if ($filter['only_with_problems']) {
+					if ($trigger['availability']['true'] > 0.00005) {
+						$selected_triggers[] = $trigger;
+					}
+				} else {
 					$selected_triggers[] = $trigger;
 				}
 			} else {
 				$selected_triggers[] = $trigger;
 			}
-			if (!$generating_csv_flag && $i > $rows_per_page) {
-				break; // Enough for one page
-			}
+			$i++;
 		}
 
 		if (!$generating_csv_flag) {
