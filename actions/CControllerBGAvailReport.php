@@ -123,6 +123,7 @@ abstract class CControllerBGAvailReport extends CController {
 					}
 				}
 			}
+			$triggers_with_problems = [];
 			foreach ($triggers as $trigger) {
 				if (in_array($trigger['triggerid'], $triggerids_with_problems)) {
 					$triggers_with_problems[] = $trigger;
