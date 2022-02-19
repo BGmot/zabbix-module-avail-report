@@ -1,7 +1,7 @@
 # zabbix-module-avail-report
 Written according to Zabbix official documentation <https://www.zabbix.com/documentation/current/manual/modules>
 
-A Zabbix 5.4 module to add new features to "Availability Report":
+A Zabbix 5.4, 6.0 module to add new features to "Availability Report":
 1) Export to CSV.
 2) Report only hosts with availability less than 100% for given time period.
 3) 'By host' and 'By trigger template' merged into one page.
