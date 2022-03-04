@@ -16,13 +16,12 @@ $table->setHeader([
 
 $allowed_ui_problems = CWebUser::checkAccess(CRoleHelper::UI_MONITORING_PROBLEMS);
 $triggers = $data['triggers'];
-$hosts = $data['hosts'];
 
-$tags = makeTags($hosts, true, 'hostid', ZBX_TAG_COUNT_DEFAULT);
-foreach ($hosts as &$host) {
-	$host['tags'] = $tags[$host['hostid']];
+$tags = makeTags($triggers, true, 'triggerid', ZBX_TAG_COUNT_DEFAULT);
+foreach ($triggers as &$trigger) {
+	$trigger['tags'] = $tags[$trigger['triggerid']];
 }
-unset($host);
+unset($trigger);
 
 foreach ($triggers as $trigger) {
 	$table->addRow([
@@ -41,7 +40,7 @@ foreach ($triggers as $trigger) {
 		($trigger['availability']['false'] < 0.00005)
 			? ''
 			: (new CSpan(sprintf('%.4f%%', $trigger['availability']['false'])))->addClass(ZBX_STYLE_GREEN),
-		$hosts[$trigger['hosts'][0]['hostid']]['tags']
+		$trigger['tags']
 	]);
 }
 

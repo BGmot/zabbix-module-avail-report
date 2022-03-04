@@ -57,20 +57,17 @@ if ($data['action'] == 'availreport.view') {
 	}
 
 	$csv = [];
-	$hosts = $data['hosts'];
-
         // Find out all the tags present in the report
 	$tag_names = [];
-	foreach ($hosts as &$host) {
-		$host['tags_kv'] = [];
-		foreach ($host['tags'] as $tag) {
+	foreach ($data['triggers'] as &$trigger) {
+		$trigger['tags_kv'] = [];
+		foreach ($trigger['tags'] as $tag) {
 			if (!in_array($tag['tag'], $tag_names)) {
 				$tag_names[] = $tag['tag'];
 			}
-			$host['tags_kv'][$tag['tag']] = $tag['value'];
+			$trigger['tags_kv'][$tag['tag']] = $tag['value'];
 		}
 	}
-
 	$csv[] = array_filter([
                         _('Host'),
                         _('Name'),
@@ -95,8 +92,8 @@ if ($data['action'] == 'availreport.view') {
 
 		// Add tags
 		foreach ($tag_names as $tag_name) {
-			if (array_key_exists($tag_name, $hosts[$trigger['hosts'][0]['hostid']]['tags_kv'])) {
-				$line_to_add[] = $hosts[$trigger['hosts'][0]['hostid']]['tags_kv'][$tag_name];
+			if (array_key_exists($tag_name, $trigger['tags_kv'])) {
+				$line_to_add[] = $trigger['tags_kv'][$tag_name];
 			} else {
 				$line_to_add[] = '';
 			}
