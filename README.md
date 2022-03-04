@@ -8,6 +8,8 @@ A Zabbix 5.4, 6.0 module to add new features to "Availability Report":
 4) Multiselect instead of drop-down filters provide much more flexibility.
 5) Filters can be saved for later use.
 
+NOTE: if "Show only hosts with problems" is not checked then tags assigned to Templates triggers came from are not shown. This would cause significant performance impact.
+
 ![screenshot](screenshots/zabbix-module-avail-report.png)
 
 # How to use
