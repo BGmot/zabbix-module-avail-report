@@ -83,7 +83,8 @@
 					}
 				}
 				var csv_url=export_csv_url.pathname.slice(1) + '?' + export_csv_url.searchParams.toString();
-				$('#export_csv').data('url', csv_url)
+				var export_button = document.getElementById("export_csv");
+				export_button.setAttribute("data-url", csv_url);
 
 				this.setLoading();
 
