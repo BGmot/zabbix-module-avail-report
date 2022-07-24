@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2022-07-24
+### Changed
+- Code updated to work with 6.2
+
 ## [1.0.2] - 2022-03-03
 ### Changed
 - Bug fix: show tags
