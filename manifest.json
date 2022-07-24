@@ -2,7 +2,7 @@
   "manifest_version": 1.0,
   "id": "availability_report",
   "name": "Availability report",
-  "version": "1.0.2",
+  "version": "2.0.0",
   "namespace": "BGmotAR",
   "author": "Evgeny Yurchenko",
   "url": "https://bgmot.com",
