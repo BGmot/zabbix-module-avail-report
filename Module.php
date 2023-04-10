@@ -4,7 +4,7 @@ namespace Modules\BGmotAR;
  
 use APP;
  
-class Module extends \Core\CModule {
+class Module extends \Zabbix\Core\CModule {
 	public function init(): void {
 		// Initialize main menu (CMenu class instance).
 		APP::Component()->get('menu.main')

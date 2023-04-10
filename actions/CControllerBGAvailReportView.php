@@ -12,7 +12,7 @@ use CWebUser;
 class CControllerBGAvailReportView extends CControllerBGAvailReport {
 
 	protected function init() {
-		$this->disableSIDValidation();
+		$this->disableCsrfValidation();
 	}
 
 	protected function checkInput() {
